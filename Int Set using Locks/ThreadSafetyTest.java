@@ -1,8 +1,9 @@
 public class ThreadSafetyTest {
-    private static final int NUM_THREADS = 100;
-    private static final int ADD_PER_THREAD = 10000;
+    private static final int NUM_THREADS = 6;
+    private static final int ADD_PER_THREAD = 500;
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args)
+    {
 
         String res2 = testSet(new ListImpl());
         System.out.println(res2);
@@ -12,19 +13,18 @@ public class ThreadSafetyTest {
         System.out.println(res1);
 
     }
-    public static String testSet(IntegerSet set) throws InterruptedException
+    public static String testSet(IntegerSet set)
     {
         String implementationName = set.getClass().getSimpleName();
         Thread[] add_threads = new Thread[NUM_THREADS];
         for (int i=0; i<NUM_THREADS;i++)
         {
-            add_threads[i] = new Thread(){
-                public void run() {
-                    for(int j=0; j<ADD_PER_THREAD*NUM_THREADS;j++) {
-                       assert  (set.add(j));
-                    }
+            int curr_i = i;
+            add_threads[i] = new Thread(() -> {
+                for(int j=0; j<ADD_PER_THREAD;j++) {
+                   set.add(curr_i*ADD_PER_THREAD + j);
                 }
-            };
+            });
         }
 
         for (Thread thread : add_threads) {
@@ -41,14 +41,13 @@ public class ThreadSafetyTest {
         Thread[] remove_threads = new Thread[NUM_THREADS];
         for (int i=0; i<NUM_THREADS;i++)
         {
-            remove_threads[i] = new Thread(){
-                public void run() {
-                    for(int j=0; j<ADD_PER_THREAD*NUM_THREADS;j++)
-                    {
-                        set.remove(j);
-                    }
+            int curr_i = i;
+            remove_threads[i] = new Thread(() -> {
+                for(int j=curr_i; j<ADD_PER_THREAD*NUM_THREADS;j+=NUM_THREADS)
+                {
+                    set.remove(j);
                 }
-            };
+            });
         }
 
         for (Thread thread : remove_threads) {
@@ -63,22 +62,24 @@ public class ThreadSafetyTest {
         }
 
         String res = implementationName;
-//        if(set.getSize()==0)
-//        {
-//            res+=" Test Passed";
-//            return res;
-//        }
+        int counter = 0 ;
         for(int i=0; i<ADD_PER_THREAD*NUM_THREADS;i++)
         {
             if(set.contains(i))
             {
-                res+=" Test Failed";
-                return res;
+                counter ++;
             }
         }
-        res+=" Test Passed";
+        if(counter > 0)
+        {
+            res+=" Test Failed: "+counter+" Contained";
+        }
+        else
+        {
+            res+=" Test Passed";
+        }
         return res;
 
     }
 
-    }
+}

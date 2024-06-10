@@ -71,6 +71,7 @@ public class FineGrainedList implements  IntegerSet{
                     prev.next = to_add;
                     to_add.next = curr;
                     prev.unlock();
+                    curr.unlock();
                     size.getAndIncrement();
                     return true;
                 }
@@ -94,16 +95,21 @@ public class FineGrainedList implements  IntegerSet{
         }
         if(head.data == i) // remove head
         {
+            FineGrainedNode temp = head;
+            temp.lock();
             this.head = head.next;
+            temp.unlock();
             size.getAndDecrement();
+
             set_lock.unlock();
             return true;
         }
-        set_lock.unlock();
+
         FineGrainedNode curr = head;
         FineGrainedNode prev = null;
 
         curr.lock(); // curr = head != null
+        set_lock.unlock();
         while(curr != null)
         {
             if(curr.data < i) // advance to next node
@@ -112,11 +118,12 @@ public class FineGrainedList implements  IntegerSet{
                 {
                     prev.unlock(); // prev of this iteration was the current of last iteration, so it is already locked
                 }
-
                 if(curr.next!=null)
                 {
                     curr.next.lock();
                 }
+
+
                 prev = curr;
                 curr = curr.next;
             }
@@ -125,9 +132,13 @@ public class FineGrainedList implements  IntegerSet{
                 if(curr.data == i)//found the node
                 {
                     prev.next = curr.next; // prev can be null only if curr=head, but this case was handled above
+                    curr.unlock();
                     prev.unlock();
                     size.getAndDecrement();
                     return true;
+                }
+                else { // skipped node / not found
+                    break;
                 }
             }
         }
