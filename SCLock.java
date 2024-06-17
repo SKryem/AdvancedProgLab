@@ -13,13 +13,13 @@ public class SCLock implements SharedCounter {
         };
     }
 
-    public synchronized void increment() {
+    public  void increment() {
         lock.lock();
         counter++;
         lock.unlock();
     }
 
-    public synchronized int getCounter() {
+    public  int getCounter() {
         lock.lock();
         int res = counter;
         lock.unlock();
